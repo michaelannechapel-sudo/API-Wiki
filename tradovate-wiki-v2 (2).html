@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tradovate API Wiki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f8f9fb;--bg2:#ffffff;--bg3:#f1f3f6;--border:#e2e6ed;--border2:#d0d5de;--text:#0f1117;--text2:#4a5468;--text3:#9aa0b0;--accent:#0b6e4f;--accent2:#0a5c42;--blue:#1a6fc4;--orange:#b45309;--red:#c0392b;--yellow:#92660a;--font-body:'Syne',sans-serif;--font-mono:'IBM Plex Mono',monospace;--radius:8px;--radius-sm:5px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.5}
+a{color:var(--accent);text-decoration:none}
+
+/* AUTH */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:var(--bg)}
+.auth-box{width:100%;max-width:380px}
+.auth-logo{margin-bottom:32px}
+.auth-logo h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.auth-logo p{font-size:13px;color:var(--text3);margin-top:4px;font-family:var(--font-mono)}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px}
+.auth-card h2{font-size:15px;font-weight:600;margin-bottom:20px}
+.auth-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.auth-field label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-mono)}
+.auth-field input{font-size:13px;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text);font-family:var(--font-body);transition:border-color .15s}
+.auth-field input:focus{outline:none;border-color:var(--accent)}
+.auth-btn{width:100%;padding:10px;font-size:13px;font-weight:600;font-family:var(--font-body);background:var(--accent);color:#ffffff;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;margin-top:4px}
+.auth-btn:hover{background:var(--accent2);color:#ffffff}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-error{background:rgba(255,90,90,.1);border:1px solid rgba(255,90,90,.2);border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:var(--red);margin-bottom:14px;display:none}
+.auth-error.show{display:block}
+.auth-footer{font-size:11px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.6}
+.forgot-link{font-size:12px;color:var(--text3);cursor:pointer;text-align:right;display:block;margin-top:-8px;margin-bottom:14px}
+.forgot-link:hover{color:var(--text2)}
+.reset-notice{background:rgba(74,240,160,.1);border:1px solid rgba(74,240,160,.2);border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:var(--accent);margin-bottom:14px;display:none}
+.reset-notice.show{display:block}
+
+/* WIKI */
+#wiki-screen{display:none;height:100vh;overflow:hidden;flex-direction:column}
+#wiki-screen.visible{display:flex}
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-brand{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.brand-name{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.brand-sub{font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)}
+.nav-section{padding:8px 0}
+.nav-label{font-size:10px;font-weight:600;color:var(--text3);padding:5px 16px 3px;text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono)}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 16px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);background:rgba(11,110,79,.06);border-left-color:var(--accent)}
+.nav-item i{font-size:14px;flex-shrink:0}
+.nav-item.admin-nav{display:none}
+.nav-item.admin-nav.visible{display:flex}
+.sidebar-footer{margin-top:auto;padding:10px 0;border-top:1px solid var(--border)}
+.user-bar{display:flex;align-items:center;gap:9px;padding:8px 16px}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:rgba(11,110,79,.12);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;font-family:var(--font-mono)}
+.user-avatar.admin-avatar{background:rgba(180,83,9,.1);color:var(--orange)}
+.user-email{font-size:11px;color:var(--text3);font-family:var(--font-mono);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.signout-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;transition:color .15s}
+.signout-btn:hover{color:var(--red)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{display:flex;align-items:center;gap:10px;padding:0 22px;height:52px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
+.topbar h1{font-size:15px;font-weight:600;flex:1;letter-spacing:-.01em}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;font-size:12px;font-family:var(--font-body);font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg3);color:var(--text)}
+.btn-primary{background:var(--accent);color:#ffffff;border-color:var(--accent);font-weight:600}
+.btn-primary:hover{background:var(--accent2);border-color:var(--accent2);color:#ffffff}
+.btn-danger{background:rgba(192,57,43,.08);color:var(--red);border-color:rgba(192,57,43,.2)}
+.btn-danger:hover{background:rgba(192,57,43,.15);color:var(--red)}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-ghost:hover{border-color:var(--border);background:var(--bg3)}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:22px 26px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.page{display:none}
+.page.active{display:block}
+.section-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono);margin:20px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.section-label:first-child{margin-top:0}
+
+/* HOME */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px}
+.stat-val{font-size:20px;font-weight:700;font-family:var(--font-mono);margin-bottom:2px}
+.stat-lbl{font-size:11px;color:var(--text3)}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.home-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .2s}
+.home-card:hover{border-color:var(--accent);background:rgba(11,110,79,.04)}
+.home-card-icon{font-size:22px;margin-bottom:10px;display:block}
+.home-card h3{font-size:13px;font-weight:600;margin-bottom:4px}
+.home-card p{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* ENDPOINTS */
+.endpoint-row{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.endpoint-row:last-child{border-bottom:none}
+.method{font-size:10px;font-weight:600;padding:3px 7px;border-radius:4px;font-family:var(--font-mono);flex-shrink:0;margin-top:1px}
+.m-get{background:rgba(11,110,79,.1);color:var(--accent)}
+.m-post{background:rgba(26,111,196,.1);color:var(--blue)}
+.ep-path{font-family:var(--font-mono);font-size:12px;color:var(--text);font-weight:500}
+.ep-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.5}
+
+/* CODE */
+.code-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;font-family:var(--font-mono);font-size:12px;color:var(--text);line-height:1.8;white-space:pre-wrap;position:relative;margin-bottom:14px;overflow-x:auto}
+.copy-btn{position:absolute;top:8px;right:10px;padding:3px 8px;font-size:10px;border:1px solid var(--border2);border-radius:4px;background:var(--bg2);color:var(--text3);cursor:pointer;font-family:var(--font-body);transition:all .15s}
+.copy-btn:hover{color:var(--text)}
+
+/* GOTCHAS */
+.gotcha-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;position:relative}
+.gotcha-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;font-family:var(--font-mono);margin-bottom:7px;background:rgba(180,83,9,.1);color:var(--orange)}
+.gotcha-title{font-size:13px;font-weight:600;margin-bottom:5px}
+.gotcha-fix{font-size:12px;color:var(--text2);line-height:1.6}
+.del-btn{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;opacity:0;transition:opacity .15s}
+.gotcha-card:hover .del-btn,.tmpl-card:hover .del-btn{opacity:1}
+
+/* TEMPLATES */
+.tmpl-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;margin-bottom:10px;position:relative;transition:border-color .15s}
+.tmpl-card:hover{border-color:var(--border2)}
+.tmpl-header{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.tmpl-name{font-size:13px;font-weight:600;flex:1}
+.cat-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;font-family:var(--font-mono)}
+.cat-onboarding{background:rgba(11,110,79,.08);color:var(--accent)}
+.cat-support{background:rgba(26,111,196,.08);color:var(--blue)}
+.cat-followup,.cat-follow-up{background:rgba(146,102,10,.08);color:var(--yellow)}
+.cat-outreach{background:rgba(192,57,43,.08);color:var(--red)}
+.cat-internal{background:rgba(74,84,104,.08);color:var(--text2)}
+.tmpl-subject{font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-bottom:8px}
+.tmpl-preview{background:var(--bg3);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;max-height:72px;overflow:hidden}
+.tmpl-actions{display:flex;gap:7px;margin-top:10px}
+
+/* SNIPPETS */
+.snippet-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;position:relative}
+.snippet-header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.snippet-label{font-size:12px;font-weight:600;flex:1}
+.snippet-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;opacity:0;transition:opacity .15s}
+.snippet-card:hover .snippet-del{opacity:1}
+.snippet-code{padding:13px 16px;font-family:var(--font-mono);font-size:12px;color:var(--text);line-height:1.8;white-space:pre-wrap;overflow-x:auto}
+
+/* ADMIN PANEL */
+.admin-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(180,83,9,.1);color:var(--orange);font-family:var(--font-mono);margin-left:8px;vertical-align:middle}
+.user-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);transition:background .15s}
+.user-row:last-child{border-bottom:none}
+.user-row:hover{background:var(--bg3)}
+.user-avi{width:32px;height:32px;border-radius:50%;background:rgba(74,240,160,.1);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;font-family:var(--font-mono)}
+.user-info{flex:1;min-width:0}
+.user-info-email{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-info-meta{font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:2px}
+.user-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;font-family:var(--font-mono);flex-shrink:0}
+.status-active{background:rgba(11,110,79,.08);color:var(--accent)}
+.status-pending{background:rgba(146,102,10,.08);color:var(--yellow)}
+.users-table{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.invite-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.invite-box h3{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+
+
+/* HELPFUL INFO */
+.folder-nav{padding-left:12px}
+.folder-nav .nav-item{font-size:12px;padding:5px 16px 5px 28px;color:var(--text3)}
+.folder-nav .nav-item.active{color:var(--accent)}
+.folder-nav .nav-item:hover{color:var(--text2)}
+.folder-toggle{display:flex;align-items:center;gap:9px;padding:7px 16px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border-left:2px solid transparent;justify-content:space-between}
+.folder-toggle:hover{color:var(--text);background:var(--bg3)}
+.folder-toggle.active{color:var(--accent);background:rgba(74,240,160,.06);border-left-color:var(--accent)}
+.folder-toggle-left{display:flex;align-items:center;gap:9px}
+.folder-toggle i.chevron{font-size:11px;transition:transform .2s;color:var(--text3)}
+.folder-toggle.open i.chevron{transform:rotate(90deg)}
+.folder-children{display:none}
+.folder-children.open{display:block}
+.info-card-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;margin-bottom:10px;position:relative;transition:border-color .15s}
+.info-card-item:hover{border-color:var(--border2)}
+.info-card-item h3{font-size:13px;font-weight:600;margin-bottom:7px;color:var(--text)}
+.info-card-item .info-body{font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap}
+.info-card-item .info-meta{font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:8px}
+.info-type-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;font-family:var(--font-mono);margin-left:8px}
+.badge-note{background:rgba(26,111,196,.08);color:var(--blue)}
+.badge-template{background:rgba(11,110,79,.08);color:var(--accent)}
+.folder-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.folder-header h2{font-size:15px;font-weight:600}
+.folder-empty{text-align:center;padding:30px;color:var(--text3)}
+.folder-empty i{font-size:24px;display:block;margin-bottom:8px;opacity:.3}
+.folder-empty p{font-size:13px}
+.new-folder-btn{display:flex;align-items:center;gap:6px;padding:5px 14px 8px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--font-mono);transition:color .15s}
+.new-folder-btn:hover{color:var(--accent)}
+
+/* SHARE BAR */
+.share-bar{background:var(--bg2);border-top:1px solid var(--border);padding:9px 22px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.share-url{flex:1;padding:5px 10px;font-size:11px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text3);font-family:var(--font-mono)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;width:440px;max-width:94vw;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:15px;font-weight:700;margin-bottom:16px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+.field label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--font-mono)}
+.field input,.field select,.field textarea{font-size:13px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text);font-family:var(--font-body);resize:vertical;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+.field textarea{min-height:80px;line-height:1.6;font-family:var(--font-mono);font-size:12px}
+.field select option{background:var(--bg3)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* MISC */
+.note{background:rgba(26,111,196,.06);border:1px solid rgba(26,111,196,.15);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;color:var(--blue);line-height:1.6;margin-bottom:14px}
+.warn{background:rgba(180,83,9,.06);border:1px solid rgba(180,83,9,.15);border-radius:var(--radius-sm);padding:10px 13px;font-size:12px;color:var(--orange);line-height:1.6;margin-bottom:14px}
+.loading{text-align:center;padding:40px;color:var(--text3);font-size:13px;font-family:var(--font-mono)}
+.loading i{font-size:24px;display:block;margin-bottom:10px;opacity:.4;animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px;color:var(--text3)}
+.empty i{font-size:28px;display:block;margin-bottom:10px;opacity:.3}
+.empty p{font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:#ffffff;font-size:12px;font-weight:600;padding:8px 18px;border-radius:var(--radius-sm);opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:999;font-family:var(--font-mono)}
+.toast.show{opacity:1}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>Tradovate API Wiki</h1>
+      <p>Team knowledge base — sign in to continue</p>
+    </div>
+    <div class="auth-card">
+      <h2>Sign in</h2>
+      <div class="reset-notice" id="reset-notice">Check your email for a password reset link.</div>
+      <div class="auth-error" id="auth-error"></div>
+      <div id="login-form">
+        <div class="auth-field"><label>Email</label><input type="email" id="auth-email" placeholder="you@company.com" autocomplete="email"/></div>
+        <div class="auth-field"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"/></div>
+        <span class="forgot-link" onclick="showForgot()">Forgot password?</span>
+        <button class="auth-btn" id="signin-btn" onclick="signIn()">Sign in</button>
+      </div>
+      <div id="forgot-form" style="display:none">
+        <div class="auth-field"><label>Email</label><input type="email" id="reset-email" placeholder="you@company.com"/></div>
+        <button class="auth-btn" id="reset-btn" onclick="sendReset()">Send reset link</button>
+        <div style="text-align:center;margin-top:14px"><span class="forgot-link" onclick="showLogin()">← Back to sign in</span></div>
+      </div>
+    </div>
+    <div class="auth-footer">Access is by invitation only.<br>Contact your team admin to request access.</div>
+  </div>
+</div>
+
+<!-- WIKI SCREEN -->
+<div id="wiki-screen">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-name">Tradovate Wiki</div>
+        <div class="brand-sub">API + Email Templates</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Overview</div>
+        <div class="nav-item active" onclick="show('home',this)"><i class="ti ti-home"></i> Home</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">API Reference</div>
+        <div class="nav-item" onclick="show('auth-ref',this)"><i class="ti ti-lock"></i> Authentication</div>
+        <div class="nav-item" onclick="show('endpoints',this)"><i class="ti ti-plug"></i> Endpoints</div>
+        <div class="nav-item" onclick="show('websocket',this)"><i class="ti ti-refresh"></i> WebSocket</div>
+        <div class="nav-item" onclick="show('snippets',this)"><i class="ti ti-code"></i> Code Snippets</div>
+        <div class="nav-item" onclick="show('gotchas',this)"><i class="ti ti-alert-triangle"></i> Gotchas Log</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Templates</div>
+        <div class="nav-item" onclick="show('templates',this)"><i class="ti ti-mail"></i> Email Templates</div>
+      </div>
+      <div class="nav-section" id="helpful-nav-section">
+        <div class="nav-label">Helpful Info</div>
+        <div id="folders-nav"></div>
+        <div class="new-folder-btn" onclick="openNewFolder()"><i class="ti ti-folder-plus"></i> New folder</div>
+      </div>
+      <div class="nav-section" id="admin-nav-section" style="display:none">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item admin-nav visible" onclick="show('admin',this)"><i class="ti ti-shield"></i> User Management</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="nav-item" onclick="show('settings',this)"><i class="ti ti-settings"></i> Settings</div>
+        <div class="user-bar">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <div class="user-email" id="user-email">—</div>
+          <button class="signout-btn" onclick="signOut()" title="Sign out"><i class="ti ti-logout"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <h1 id="page-title">Home</h1>
+        <button class="btn" onclick="openShare()"><i class="ti ti-share"></i> Share</button>
+        <button class="btn btn-primary" id="add-btn" onclick="openAdd()"><i class="ti ti-plus"></i> Add</button>
+      </div>
+
+      <div class="content">
+
+        <!-- HOME -->
+        <div class="page active" id="page-home">
+          <div class="stat-grid">
+            <div class="stat-card"><div class="stat-val" style="color:var(--accent)">Live</div><div class="stat-lbl">live.tradovateapi.com/v1</div></div>
+            <div class="stat-card"><div class="stat-val" style="color:var(--yellow)">Demo</div><div class="stat-lbl">demo.tradovateapi.com/v1</div></div>
+            <div class="stat-card"><div class="stat-val">90m</div><div class="stat-lbl">Token lifespan</div></div>
+            <div class="stat-card"><div class="stat-val">2</div><div class="stat-lbl">Max sessions</div></div>
+          </div>
+          <div class="home-grid">
+            <div class="home-card" onclick="show('auth-ref',null)"><i class="ti ti-lock home-card-icon" style="color:var(--accent)"></i><h3>Authentication</h3><p>Token request, renewal, OAuth, session rules</p></div>
+            <div class="home-card" onclick="show('endpoints',null)"><i class="ti ti-plug home-card-icon" style="color:var(--blue)"></i><h3>Endpoints</h3><p>Orders, positions, accounts, market data</p></div>
+            <div class="home-card" onclick="show('snippets',null)"><i class="ti ti-code home-card-icon" style="color:var(--yellow)"></i><h3>Code Snippets</h3><p>Copy-ready JS for auth, orders, requests</p></div>
+            <div class="home-card" onclick="show('gotchas',null)"><i class="ti ti-alert-triangle home-card-icon" style="color:var(--orange)"></i><h3>Gotchas Log</h3><p>Team-logged bugs, traps, and workarounds</p></div>
+            <div class="home-card" onclick="show('templates',null)"><i class="ti ti-mail home-card-icon" style="color:var(--red)"></i><h3>Email Templates</h3><p>Onboarding, support, follow-up, outreach</p></div>
+            <div class="home-card" onclick="show('websocket',null)"><i class="ti ti-refresh home-card-icon" style="color:var(--text2)"></i><h3>WebSocket</h3><p>Real-time connections, subscriptions, patterns</p></div>
+          </div>
+          <div class="section-label" style="margin-top:20px">Official docs</div>
+          <a href="https://partner.tradovate.com/api/rest-api-endpoints/authentication/access-token-request" target="_blank" style="font-size:13px;display:inline-flex;align-items:center;gap:6px"><i class="ti ti-external-link"></i> partner.tradovate.com — Partner API Docs</a>
+        </div>
+
+        <!-- AUTH REF -->
+        <div class="page" id="page-auth-ref">
+          <div class="note"><strong>Base URLs:</strong> Demo: <code style="font-family:var(--font-mono)">https://demo.tradovateapi.com/v1</code> &nbsp;|&nbsp; Live: <code style="font-family:var(--font-mono)">https://live.tradovateapi.com/v1</code></div>
+          <div class="section-label">Endpoints</div>
+          <div class="endpoint-row"><span class="method m-post">POST</span><div><div class="ep-path">/auth/accesstokenrequest</div><div class="ep-desc">Request a new access token. Returns accessToken, mdAccessToken, userId.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/auth/renewAccessToken</div><div class="ep-desc">Extend token lifetime. Call ~15 min before expiry. Tokens last 90 minutes.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/auth/me</div><div class="ep-desc">Returns authenticated user profile. Use to verify a token is valid.</div></div></div>
+          <div class="endpoint-row"><span class="method m-post">POST</span><div><div class="ep-path">/auth/oauthtoken</div><div class="ep-desc">Exchange an OAuth authorization code for an access token.</div></div></div>
+          <div class="section-label">Token request body</div>
+          <div class="code-box">{
+  "name": "your_username",
+  "password": "your_password",
+  "appId": "Sample App",
+  "appVersion": "1.0",
+  "cid": 0,
+  "sec": "your_api_secret"
+}<button class="copy-btn" onclick="cp(this,'{&quot;name&quot;:&quot;your_username&quot;,&quot;password&quot;:&quot;your_password&quot;}')">Copy</button></div>
+          <div class="section-label">Authorization header</div>
+          <div class="code-box">Authorization: Bearer &lt;accessToken&gt;
+Content-Type: application/json<button class="copy-btn" onclick="cp(this,'Authorization: Bearer <accessToken>')">Copy</button></div>
+          <div class="section-label">Key rules</div>
+          <div style="font-size:13px;color:var(--text2);line-height:2">
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">▸</span> Max <strong style="color:var(--text)">2 concurrent sessions</strong> — a 3rd login closes the oldest<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">▸</span> Renew ~15 min before expiry via <code style="font-family:var(--font-mono);font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:3px">/auth/renewAccessToken</code><br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">▸</span> Use a <strong style="color:var(--text)">dedicated API user</strong> — never share with browser logins<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">▸</span> Request once per app instance, distribute the token
+          </div>
+        </div>
+
+        <!-- ENDPOINTS -->
+        <div class="page" id="page-endpoints">
+          <div class="section-label">Orders</div>
+          <div class="endpoint-row"><span class="method m-post">POST</span><div><div class="ep-path">/order/placeOrder</div><div class="ep-desc">Place a new order. Requires accountId, action (Buy/Sell), symbol, orderQty, orderType. Set isAutomated: true for algo orders.</div></div></div>
+          <div class="endpoint-row"><span class="method m-post">POST</span><div><div class="ep-path">/order/modifyOrder</div><div class="ep-desc">Modify an existing order by orderId.</div></div></div>
+          <div class="endpoint-row"><span class="method m-post">POST</span><div><div class="ep-path">/order/cancelOrder</div><div class="ep-desc">Cancel an order by orderId.</div></div></div>
+          <div class="endpoint-row"><span class="method m-post">POST</span><div><div class="ep-path">/order/liquidatePosition</div><div class="ep-desc">Liquidate an open position for a given account and contract.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/order/list</div><div class="ep-desc">List all orders for the authenticated user.</div></div></div>
+          <div class="section-label">Positions & Accounts</div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/position/list</div><div class="ep-desc">List all open positions.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/account/list</div><div class="ep-desc">List all accounts.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/account/find</div><div class="ep-desc">Find a specific account by name or ID.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/cashBalance/getCashBalanceSnapshot</div><div class="ep-desc">Get cash balance snapshot for an account.</div></div></div>
+          <div class="section-label">Market Data</div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/md/getQuote</div><div class="ep-desc">Get quote data. Requires mdAccessToken.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/md/getDOM</div><div class="ep-desc">Get depth of market data.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/md/getChart</div><div class="ep-desc">Get OHLCV chart data for a symbol and time range.</div></div></div>
+          <div class="section-label">Contracts</div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/contract/list</div><div class="ep-desc">List all available contracts.</div></div></div>
+          <div class="endpoint-row"><span class="method m-get">GET</span><div><div class="ep-path">/contract/find</div><div class="ep-desc">Find a specific contract by name (e.g. ESZ4).</div></div></div>
+        </div>
+
+        <!-- WEBSOCKET -->
+        <div class="page" id="page-websocket">
+          <div class="section-label">Base URLs</div>
+          <div class="code-box">Demo: wss://demo.tradovateapi.com/v1/websocket
+Live: wss://live.tradovateapi.com/v1/websocket<button class="copy-btn" onclick="cp(this,'wss://demo.tradovateapi.com/v1/websocket')">Copy</button></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px">
+              <div style="font-size:11px;font-weight:600;color:var(--accent);font-family:var(--font-mono);margin-bottom:8px">USE REST FOR</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.8">Auth (only way to get a token)<br>Place / modify / cancel orders<br>Batch loading (/ldeps)<br>OAuth flows</div>
+            </div>
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px">
+              <div style="font-size:11px;font-weight:600;color:var(--orange);font-family:var(--font-mono);margin-bottom:8px">USE WEBSOCKET FOR</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.8">Real-time quotes & DOM<br>Fill and order update streams<br>Account balance updates<br>Streaming market data</div>
+            </div>
+          </div>
+          <div class="section-label">Connection pattern</div>
+          <div class="code-box">const ws = new WebSocket('wss://demo.tradovateapi.com/v1/websocket');
+ws.onopen = () => { ws.send(`authorize\n0\n\n${accessToken}`); };
+ws.onmessage = (msg) => {
+  if (msg.data === 'o' || msg.data === 'h') return;
+  const data = JSON.parse(msg.data.slice(1));
+};<button class="copy-btn" onclick="cp(this,'ws.send(`authorize\\n0\\n\\n${accessToken}`)')">Copy</button></div>
+          <div class="warn">Market data subscriptions require <code style="font-family:var(--font-mono)">mdAccessToken</code>, not <code style="font-family:var(--font-mono)">accessToken</code>.</div>
+        </div>
+
+        <!-- SNIPPETS -->
+        <div class="page" id="page-snippets">
+          <div class="section-label">Built-in snippets</div>
+          <div class="snippet-card">
+            <div class="snippet-header"><span class="snippet-label">Get access token (JS)</span><button class="btn btn-sm btn-ghost" onclick="cp(this,document.getElementById('snip-auth').textContent)"><i class="ti ti-copy"></i> Copy</button></div>
+            <div class="snippet-code" id="snip-auth">async function getAccessToken() {
+  const res = await fetch('https://demo.tradovateapi.com/v1/auth/accesstokenrequest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: process.env.TV_USERNAME, password: process.env.TV_PASSWORD,
+      appId: 'My App', appVersion: '1.0', cid: 0, sec: process.env.TV_SECRET })
+  });
+  return res.json(); // { accessToken, mdAccessToken, userId }
+}</div>
+          </div>
+          <div class="snippet-card">
+            <div class="snippet-header"><span class="snippet-label">Place a market order (JS)</span><button class="btn btn-sm btn-ghost" onclick="cp(this,document.getElementById('snip-order').textContent)"><i class="ti ti-copy"></i> Copy</button></div>
+            <div class="snippet-code" id="snip-order">async function placeOrder(token, accountId) {
+  const res = await fetch('https://demo.tradovateapi.com/v1/order/placeOrder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ accountId, action: 'Buy', symbol: 'ESZ4',
+      orderQty: 1, orderType: 'Market', isAutomated: true })
+  });
+  return res.json();
+}</div>
+          </div>
+          <div class="section-label">Team snippets</div>
+          <div id="snippets-container"><div class="loading"><i class="ti ti-loader"></i>Loading...</div></div>
+        </div>
+
+        <!-- GOTCHAS -->
+        <div class="page" id="page-gotchas">
+          <div class="section-label">Built-in gotchas</div>
+          <div class="gotcha-card"><span class="gotcha-tag">Auth</span><div class="gotcha-title">2 concurrent session limit</div><div class="gotcha-fix">A 3rd login closes the oldest session. Use one dedicated API user and distribute the token.</div></div>
+          <div class="gotcha-card"><span class="gotcha-tag">Market Data</span><div class="gotcha-title">mdAccessToken is separate from accessToken</div><div class="gotcha-fix">Both returned by /auth/accesstokenrequest. Market data endpoints require mdAccessToken.</div></div>
+          <div class="gotcha-card"><span class="gotcha-tag">WebSocket</span><div class="gotcha-title">Messages are prefixed with a frame type character</div><div class="gotcha-fix">Strip first char before JSON.parse() — msg.data.slice(1). a=data, h=heartbeat, o=open, c=close.</div></div>
+          <div class="gotcha-card"><span class="gotcha-tag">Orders</span><div class="gotcha-title">isAutomated flag required for algo orders</div><div class="gotcha-fix">Set isAutomated: true in order body. Omitting it can cause rejections on live accounts.</div></div>
+          <div class="section-label">Team gotchas</div>
+          <div id="gotchas-container"><div class="loading"><i class="ti ti-loader"></i>Loading...</div></div>
+        </div>
+
+        <!-- TEMPLATES -->
+        <div class="page" id="page-templates">
+          <div id="templates-container"><div class="loading"><i class="ti ti-loader"></i>Loading...</div></div>
+        </div>
+
+        <!-- HELPFUL INFO FOLDER -->
+        <div class="page" id="page-folder">
+          <div class="folder-header">
+            <h2 id="folder-page-title">Folder</h2>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" onclick="openRenameFolderModal()"><i class="ti ti-edit"></i> Rename</button>
+              <button class="btn btn-sm" style="color:var(--red);border-color:rgba(255,90,90,.2)" onclick="deleteFolderConfirm()"><i class="ti ti-trash"></i> Delete folder</button>
+            </div>
+          </div>
+          <div id="folder-contents"></div>
+        </div>
+
+        <!-- ADMIN PANEL -->
+        <div class="page" id="page-admin">
+          <div class="note" style="margin-bottom:20px">User management is handled directly in your Supabase dashboard. Click below to open it.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+            <a href="https://supabase.com/dashboard/project/vynyxzomxpkkukoavlhe/auth/users" target="_blank" class="home-card" style="text-decoration:none">
+              <i class="ti ti-user-plus home-card-icon" style="color:var(--accent)"></i>
+              <h3>Invite a user</h3>
+              <p>Authentication → Users → Invite user → enter their email</p>
+            </a>
+            <a href="https://supabase.com/dashboard/project/vynyxzomxpkkukoavlhe/auth/users" target="_blank" class="home-card" style="text-decoration:none">
+              <i class="ti ti-user-minus home-card-icon" style="color:var(--red)"></i>
+              <h3>Remove a user</h3>
+              <p>Authentication → Users → click the user → Delete user</p>
+            </a>
+          </div>
+          <div class="section-label">How invitations work</div>
+          <div style="font-size:13px;color:var(--text2);line-height:2">
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">1.</span> Go to Supabase → Authentication → Users → Invite user<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">2.</span> Enter their email — they get a link to set their password<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">3.</span> Once they set a password, they can sign in to the wiki<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">4.</span> To remove access, delete their user from the same screen
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="page" id="page-settings">
+          <div class="section-label">Wiki URL</div>
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <input style="flex:1;padding:8px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text3);font-family:var(--font-mono)" value="https://yourusername.github.io/tradovate-wiki" readonly/>
+            <button class="btn" onclick="toast('Link copied!')"><i class="ti ti-copy"></i> Copy</button>
+          </div>
+          <div class="section-label">Access</div>
+          <div class="note">Access is managed via Supabase Auth. Only users you invite can sign in. Admins can manage users directly from the User Management panel in the sidebar.</div>
+          <div class="section-label">Deployment steps</div>
+          <div style="font-size:13px;color:var(--text2);line-height:2">
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">1.</span> Upload tradovate-wiki.html to your GitHub repo<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">2.</span> Deploy the admin-users Edge Function to Supabase<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">3.</span> Settings → Pages → main branch → Save<br>
+            <span style="color:var(--accent);font-family:var(--font-mono);font-size:11px">4.</span> Invite teammates from the User Management panel
+          </div>
+        </div>
+
+      </div>
+
+      <div class="share-bar">
+        <i class="ti ti-lock" style="font-size:13px;color:var(--accent)"></i>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">Invite-only · Synced via Supabase</span>
+        <input class="share-url" value="https://yourusername.github.io/tradovate-wiki" readonly/>
+        <button class="btn btn-sm" onclick="toast('Link copied!')"><i class="ti ti-copy"></i> Copy link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="modal-add">
+  <div class="modal">
+    <h2 id="modal-title">Add entry</h2>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-save" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="overlay" id="modal-share">
+  <div class="modal" style="max-width:380px">
+    <h2>Share this wiki</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Share this URL with teammates. They'll need to sign in with their invited account to access it.</p>
+    <div class="field">
+      <label>Wiki URL</label>
+      <div style="display:flex;gap:8px">
+        <input value="https://yourusername.github.io/tradovate-wiki" readonly style="font-family:var(--font-mono);font-size:11px;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text3);flex:1"/>
+        <button class="btn" onclick="toast('Copied!');closeModal('modal-share')"><i class="ti ti-copy"></i></button>
+      </div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="closeModal('modal-share')">Done</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+const SUPABASE_URL = 'https://vynyxzomxpkkukoavlhe.supabase.co';
+const ADMIN_EMAILS = [];
+let isAdmin = false;
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5bnl4em9teHBra3Vrb2F2bGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDg1OTksImV4cCI6MjA5NTQ4NDU5OX0.hvA38b4C4ZJ5a9D6O1Tt34GeEjUqk2Oqsda1I7rENQk';
+
+
+
+
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+let currentPage = 'home';
+
+
+// ── HELPFUL INFO ──
+const DEFAULT_FOLDERS = ['IB Replies', 'Shareable API Info', 'Resources', 'Internal Notes'];
+let currentFolderId = null;
+
+async function loadFoldersNav() {
+  try {
+    const h = await getAuthHeaders();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/folders?order=position.asc,created_at.asc`, { headers: h });
+    let folders = [];
+    if (res.ok) {
+      folders = await res.json();
+    }
+    // If no folders exist yet, seed the defaults
+    if (folders.length === 0) {
+      for (let i = 0; i < DEFAULT_FOLDERS.length; i++) {
+        try {
+          const r = await fetch(`${SUPABASE_URL}/rest/v1/folders`, {
+            method: 'POST',
+            headers: { ...(await getAuthHeaders()), 'Prefer': 'return=representation' },
+            body: JSON.stringify({ name: DEFAULT_FOLDERS[i], position: i })
+          });
+          if (r.ok) { const d = await r.json(); folders.push(d[0]); }
+        } catch(e) {}
+      }
+    }
+    window._folders = folders;
+    renderFoldersNav(folders);
+  } catch(e) {
+    console.error('loadFoldersNav error:', e);
+  }
+}
+
+function renderFoldersNav(folders) {
+  const el = document.getElementById('folders-nav');
+  if (!folders.length) { el.innerHTML = ''; return; }
+  el.innerHTML = folders.map(f => `
+    <div class="nav-item" id="folder-nav-${f.id}" onclick="showFolder('${f.id}','${escJs(f.name)}',this)">
+      <i class="ti ti-folder" style="font-size:14px"></i> ${esc(f.name)}
+    </div>
+  `).join('');
+}
+
+function showFolder(id, name, navEl) {
+  show('folder', navEl);
+  currentFolderId = id;
+  document.getElementById('folder-page-title').textContent = name;
+  document.getElementById('page-title').textContent = name;
+  loadFolderContents(id);
+}
+
+async function loadFolderContents(folderId) {
+  const el = document.getElementById('folder-contents');
+  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>Loading...</div>';
+  try {
+    const h = await getAuthHeaders();
+    // Load notes
+    const notesRes = await fetch(`${SUPABASE_URL}/rest/v1/folder_notes?folder_id=eq.${folderId}&order=created_at.asc`, { headers: h });
+    const notes = notesRes.ok ? await notesRes.json() : [];
+    // Load templates in this folder
+    const tmplRes = await fetch(`${SUPABASE_URL}/rest/v1/templates?folder_id=eq.${folderId}&order=created_at.asc`, { headers: h });
+    const tmpls = tmplRes.ok ? await tmplRes.json() : [];
+    window._folderTemplates = tmpls;
+    const all = [
+      ...notes.map(n => ({ ...n, _type: 'note' })),
+      ...tmpls.map(t => ({ ...t, _type: 'template' }))
+    ].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    if (!all.length) {
+      el.innerHTML = `<div class="folder-empty"><i class="ti ti-folder-open"></i><p>This folder is empty.<br>Click <strong>Add</strong> to add a note or email template.</p></div>`;
+      return;
+    }
+    el.innerHTML = all.map(item => item._type === 'note' ? renderNoteCard(item) : renderFolderTemplateCard(item)).join('');
+  } catch(e) { el.innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i><p>Error: ${esc(e.message)}</p></div>`; }
+}
+
+function renderNoteCard(n) {
+  return `<div class="info-card-item">
+    <button class="del-btn" onclick="deleteNote('${n.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+    <h3>${esc(n.title)} <span class="info-type-badge badge-note">Note</span></h3>
+    <div class="info-body">${esc(n.content||'')}</div>
+    <div style="display:flex;gap:7px;margin-top:10px">
+      <button class="btn btn-sm" onclick="editNote('${n.id}')"><i class="ti ti-edit"></i> Edit</button>
+    </div>
+  </div>`;
+}
+
+function renderFolderTemplateCard(t) {
+  return `<div class="info-card-item">
+    <button class="del-btn" onclick="deleteFolderTemplate('${t.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+    <h3>${esc(t.name)} <span class="info-type-badge badge-template">Template</span>
+      <span class="cat-badge cat-${(t.category||'').toLowerCase().replace(/[^a-z]/g,'')}" style="margin-left:6px">${esc(t.category||'')}</span>
+    </h3>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-bottom:7px">${esc(t.subject||'')}</div>
+    <div class="info-body" style="max-height:60px;overflow:hidden">${esc(t.body||'')}</div>
+    <div style="display:flex;gap:7px;margin-top:10px">
+      <button class="btn btn-sm" onclick="copyFolderTemplate('${t.id}')"><i class="ti ti-copy"></i> Copy</button>
+      <button class="btn btn-sm" onclick="editFolderTemplate('${t.id}')"><i class="ti ti-edit"></i> Edit</button>
+    </div>
+  </div>`;
+}
+
+async function deleteNote(id) {
+  if (!confirm('Delete this note?')) return;
+  try {
+    const h = await getAuthHeaders();
+    await fetch(`${SUPABASE_URL}/rest/v1/folder_notes?id=eq.${id}`, { method: 'DELETE', headers: h });
+    toast('Deleted'); loadFolderContents(currentFolderId);
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+async function deleteFolderTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  try { await dbDelete('templates', id); toast('Deleted'); loadFolderContents(currentFolderId); }
+  catch(e) { toast('Error: ' + e.message); }
+}
+
+function copyFolderTemplate(id) {
+  const t = (window._folderTemplates||[]).find(x => x.id === id);
+  if (!t) return;
+  navigator.clipboard.writeText(`Subject: ${t.subject}\n\n${t.body}`).catch(()=>{});
+  toast('Template copied!');
+}
+
+function editNote(id) {
+  const note = null; // reload from DOM not needed — open blank edit
+  document.getElementById('modal-title').textContent = 'Edit note';
+  // We'll re-fetch on save
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Title</label><input id="f-title" placeholder="Note title"/></div>
+    <div class="field"><label>Content</label><textarea id="f-content" rows="8" placeholder="Write your note here..."></textarea></div>`;
+  // Pre-fill by fetching
+  getAuthHeaders().then(h =>
+    fetch(`${SUPABASE_URL}/rest/v1/folder_notes?id=eq.${id}`, { headers: h })
+    .then(r => r.json()).then(data => {
+      if (data[0]) { document.getElementById('f-title').value = data[0].title||''; document.getElementById('f-content').value = data[0].content||''; }
+    })
+  );
+  document.getElementById('modal-save').onclick = async () => {
+    try {
+      const h = await getAuthHeaders();
+      await fetch(`${SUPABASE_URL}/rest/v1/folder_notes?id=eq.${id}`, {
+        method: 'PATCH', headers: { ...h, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ title: document.getElementById('f-title').value, content: document.getElementById('f-content').value })
+      });
+      closeModal(); toast('Note updated!'); loadFolderContents(currentFolderId);
+    } catch(e) { toast('Error: ' + e.message); }
+  };
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function editFolderTemplate(id) {
+  const t = (window._folderTemplates||[]).find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('modal-title').textContent = 'Edit template';
+  document.getElementById('modal-body').innerHTML = templateForm(t);
+  document.getElementById('modal-save').onclick = async () => {
+    try { await dbPatch('templates', id, getTemplateForm()); closeModal(); toast('Updated!'); loadFolderContents(currentFolderId); }
+    catch(e) { toast('Error: ' + e.message); }
+  };
+  document.getElementById('modal-add').classList.add('open');
+}
+
+// ── FOLDER MANAGEMENT ──
+function openNewFolder() {
+  document.getElementById('modal-title').textContent = 'New folder';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Folder name</label><input id="f-folder-name" placeholder="e.g. Partner Outreach"/></div>`;
+  document.getElementById('modal-save').onclick = async () => {
+    const name = document.getElementById('f-folder-name').value.trim();
+    if (!name) { toast('Name required'); return; }
+    try {
+      const h = await getAuthHeaders();
+      await fetch(`${SUPABASE_URL}/rest/v1/folders`, {
+        method: 'POST', headers: { ...h, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ name, position: (window._folders||[]).length })
+      });
+      closeModal(); toast('Folder created!'); loadFoldersNav();
+    } catch(e) { toast('Error: ' + e.message); }
+  };
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function openRenameFolderModal() {
+  const folder = (window._folders||[]).find(f => f.id === currentFolderId);
+  if (!folder) return;
+  document.getElementById('modal-title').textContent = 'Rename folder';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Folder name</label><input id="f-folder-name" value="${esc(folder.name)}"/></div>`;
+  document.getElementById('modal-save').onclick = async () => {
+    const name = document.getElementById('f-folder-name').value.trim();
+    if (!name) { toast('Name required'); return; }
+    try {
+      const h = await getAuthHeaders();
+      await fetch(`${SUPABASE_URL}/rest/v1/folders?id=eq.${currentFolderId}`, {
+        method: 'PATCH', headers: { ...h, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ name })
+      });
+      closeModal(); toast('Renamed!');
+      document.getElementById('folder-page-title').textContent = name;
+      document.getElementById('page-title').textContent = name;
+      loadFoldersNav();
+    } catch(e) { toast('Error: ' + e.message); }
+  };
+  document.getElementById('modal-add').classList.add('open');
+}
+
+async function deleteFolderConfirm() {
+  const folder = (window._folders||[]).find(f => f.id === currentFolderId);
+  if (!folder) return;
+  if (!confirm(`Delete the folder "${folder.name}" and all its contents? This cannot be undone.`)) return;
+  try {
+    const h = await getAuthHeaders();
+    // Delete notes in folder
+    await fetch(`${SUPABASE_URL}/rest/v1/folder_notes?folder_id=eq.${currentFolderId}`, { method: 'DELETE', headers: h });
+    // Remove folder_id from templates
+    await fetch(`${SUPABASE_URL}/rest/v1/templates?folder_id=eq.${currentFolderId}`, {
+      method: 'PATCH', headers: { ...h, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ folder_id: null })
+    });
+    // Delete folder
+    await fetch(`${SUPABASE_URL}/rest/v1/folders?id=eq.${currentFolderId}`, { method: 'DELETE', headers: h });
+    toast('Folder deleted'); show('home', null); loadFoldersNav();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+// ── ADD FOLDER CONTENT ──
+function openAddFolderContent() {
+  document.getElementById('modal-title').textContent = 'Add to folder';
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px">
+      <div class="home-card" style="padding:14px;text-align:center" onclick="switchFolderAddMode('note')">
+        <i class="ti ti-file-text" style="font-size:20px;color:var(--blue);display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:600">New Note</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Free-form text or info</div>
+      </div>
+      <div class="home-card" style="padding:14px;text-align:center" onclick="switchFolderAddMode('template')">
+        <i class="ti ti-mail" style="font-size:20px;color:var(--accent);display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:600">New Template</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Create a new one</div>
+      </div>
+      <div class="home-card" style="padding:14px;text-align:center" onclick="switchFolderAddMode('existing')">
+        <i class="ti ti-template" style="font-size:20px;color:var(--yellow);display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:600">Existing Template</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Add one you already have</div>
+      </div>
+    </div>
+    <div id="folder-add-form"></div>`;
+  document.getElementById('modal-save').style.display = 'none';
+  document.getElementById('modal-add').classList.add('open');
+}
+
+async function switchFolderAddMode(mode) {
+  const formEl = document.getElementById('folder-add-form');
+  document.getElementById('modal-save').style.display = '';
+  if (mode === 'note') {
+    document.getElementById('modal-title').textContent = 'Add note';
+    formEl.innerHTML = `
+      <div class="field" style="margin-top:12px"><label>Title</label><input id="f-title" placeholder="Note title"/></div>
+      <div class="field"><label>Content</label><textarea id="f-content" rows="8" placeholder="Write your note here..."></textarea></div>`;
+    document.getElementById('modal-save').onclick = saveFolderNote;
+  } else if (mode === 'template') {
+    document.getElementById('modal-title').textContent = 'Add email template';
+    formEl.innerHTML = `<div style="margin-top:12px">` + templateForm() + `</div>`;
+    document.getElementById('modal-save').onclick = saveFolderTemplate;
+  } else if (mode === 'existing') {
+    document.getElementById('modal-title').textContent = 'Add existing template';
+    document.getElementById('modal-save').style.display = 'none';
+    formEl.innerHTML = `<div class="loading" style="margin-top:12px"><i class="ti ti-loader"></i>Loading templates...</div>`;
+    try {
+      // Load templates not already in this folder
+      const h = await getAuthHeaders();
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/templates?order=name.asc`, { headers: h });
+      const all = res.ok ? await res.json() : [];
+      const available = all.filter(t => t.folder_id !== currentFolderId);
+      if (!available.length) {
+        formEl.innerHTML = `<div class="empty" style="margin-top:12px"><i class="ti ti-mail"></i><p>No other templates available.<br>All templates are already in this folder.</p></div>`;
+        return;
+      }
+      formEl.innerHTML = `
+        <div style="margin-top:12px;font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-bottom:8px">Select a template to add to this folder:</div>
+        <div style="max-height:320px;overflow-y:auto">
+          ${available.map(t => `
+            <div class="user-row" style="cursor:pointer;border-radius:var(--radius-sm);padding:10px 12px" onclick="assignTemplateToFolder('${t.id}')">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:var(--text)">${esc(t.name)}</div>
+                <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:2px">${esc(t.subject||'(no subject)')}</div>
+              </div>
+              <span class="cat-badge cat-${(t.category||'').toLowerCase().replace(/[^a-z]/g,'')}">${esc(t.category||'')}</span>
+              <button class="btn btn-sm btn-primary" style="margin-left:8px;flex-shrink:0">Add</button>
+            </div>
+          `).join('')}
+        </div>`;
+    } catch(e) {
+      formEl.innerHTML = `<div class="empty" style="margin-top:12px"><i class="ti ti-alert-circle"></i><p>Error loading templates: ${esc(e.message)}</p></div>`;
+    }
+  }
+}
+
+async function assignTemplateToFolder(templateId) {
+  try {
+    await dbPatch('templates', templateId, { folder_id: currentFolderId });
+    closeModal();
+    toast('Template added to folder!');
+    loadFolderContents(currentFolderId);
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+async function saveFolderNote() {
+  const title = document.getElementById('f-title')?.value?.trim();
+  const content = document.getElementById('f-content')?.value;
+  if (!title) { toast('Title required'); return; }
+  try {
+    const h = await getAuthHeaders();
+    await fetch(`${SUPABASE_URL}/rest/v1/folder_notes`, {
+      method: 'POST', headers: { ...h, 'Prefer': 'return=representation' },
+      body: JSON.stringify({ folder_id: currentFolderId, title, content })
+    });
+    closeModal(); toast('Note saved!'); loadFolderContents(currentFolderId);
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+async function saveFolderTemplate() {
+  const d = getTemplateForm();
+  if (!d.name) { toast('Name required'); return; }
+  try {
+    await dbInsert('templates', { ...d, folder_id: currentFolderId });
+    closeModal(); toast('Template saved!'); loadFolderContents(currentFolderId);
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+function escJs(s) { return String(s).replace(/'/g, "\'").replace(/"/g, '\"'); }
+
+
+// ── AUTH ──
+async function init() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) showWiki(session.user);
+    sb.auth.onAuthStateChange((_event, session) => {
+      if (session) showWiki(session.user);
+      else showAuth();
+    });
+  } catch(e) {
+    console.error('Init error:', e);
+  }
+}
+
+function showWiki(user) {
+  currentUser = user;
+  isAdmin = ADMIN_EMAILS.includes(user.email || '');
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('wiki-screen').classList.add('visible');
+  const email = user.email || '';
+  document.getElementById('user-email').textContent = email;
+  const av = document.getElementById('user-avatar');
+  av.textContent = email.charAt(0).toUpperCase();
+  loadFoldersNav();
+  if (isAdmin) {
+    av.classList.add('admin-avatar');
+        document.getElementById('admin-topbadge').style.display = 'inline-flex';
+  }
+}
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('wiki-screen').classList.remove('visible');
+  currentUser = null; isAdmin = false;
+}
+
+async function signIn() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('signin-btn');
+  clearAuthError();
+  if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if (error) showAuthError(error.message);
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+}
+
+async function sendReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  const btn = document.getElementById('reset-btn');
+  clearAuthError();
+  if (!email) { showAuthError('Please enter your email.'); return; }
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  btn.disabled = false; btn.textContent = 'Send reset link';
+  if (error) { showAuthError(error.message); return; }
+  document.getElementById('forgot-form').style.display = 'none';
+  document.getElementById('reset-notice').classList.add('show');
+}
+
+function showAuthError(msg) { const el = document.getElementById('auth-error'); el.textContent = msg; el.classList.add('show'); }
+function clearAuthError() { document.getElementById('auth-error').classList.remove('show'); }
+function showForgot() { document.getElementById('login-form').style.display='none'; document.getElementById('forgot-form').style.display='block'; clearAuthError(); }
+function showLogin() { document.getElementById('forgot-form').style.display='none'; document.getElementById('login-form').style.display='block'; clearAuthError(); }
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('auth-screen').style.display === 'none') return;
+  if (document.getElementById('login-form').style.display !== 'none') signIn();
+  else sendReset();
+});
+
+// ── DATABASE ──
+async function getAuthHeaders() {
+  const { data: { session } } = await sb.auth.getSession();
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${session?.access_token || SUPABASE_KEY}`
+  };
+}
+
+async function dbGet(table) {
+  const h = await getAuthHeaders();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?order=created_at.asc`, { headers: h });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function dbInsert(table, data) {
+  const h = await getAuthHeaders();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST', headers: { ...h, 'Prefer': 'return=representation' }, body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function dbPatch(table, id, data) {
+  const h = await getAuthHeaders();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH', headers: { ...h, 'Prefer': 'return=representation' }, body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function dbDelete(table, id) {
+  const h = await getAuthHeaders();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method: 'DELETE', headers: h });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+
+// ── NAV ──
+function show(id, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  else document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'")) n.classList.add('active');
+  });
+  currentPage = id;
+  const titles = { home:'Home','auth-ref':'Authentication', endpoints:'Endpoints', websocket:'WebSocket', snippets:'Code Snippets', gotchas:'Gotchas Log', templates:'Email Templates', admin:'User Management', settings:'Settings', folder:'Folder' };
+  document.getElementById('page-title').textContent = titles[id] || id;
+  // hide add btn on admin/settings
+  document.getElementById('add-btn').style.display = (id === 'admin' || id === 'settings') ? 'none' : '';
+  if (id === 'templates') loadTemplates();
+  if (id === 'gotchas') loadGotchas();
+  if (id === 'snippets') loadSnippets();
+  
+}
+
+// ── TEMPLATES ──
+async function loadTemplates() {
+  const el = document.getElementById('templates-container');
+  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>Loading...</div>';
+  try {
+    const data = await dbGet('templates');
+    window._templates = data;
+    if (!data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-mail"></i><p>No templates yet. Click Add to create one.</p></div>'; return; }
+    el.innerHTML = data.map(t => `
+      <div class="tmpl-card">
+        <button class="del-btn" onclick="deleteTmpl('${t.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+        <div class="tmpl-header">
+          <span class="tmpl-name">${esc(t.name)}</span>
+          <span class="cat-badge cat-${(t.category||'').toLowerCase().replace(/[^a-z]/g,'')}">${esc(t.category||'')}</span>
+        </div>
+        <div class="tmpl-subject"><i class="ti ti-mail" style="font-size:11px"></i> ${esc(t.subject||'(no subject)')}</div>
+        <div class="tmpl-preview">${esc(t.body||'')}</div>
+        <div class="tmpl-actions">
+          <button class="btn btn-sm" onclick="copyTemplate('${t.id}')"><i class="ti ti-copy"></i> Copy</button>
+          <button class="btn btn-sm" onclick="editTemplate('${t.id}')"><i class="ti ti-edit"></i> Edit</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i><p>Error: ${esc(e.message)}</p></div>`; }
+}
+
+async function deleteTmpl(id) {
+  if (!confirm('Delete this template?')) return;
+  try { await dbDelete('templates', id); toast('Deleted'); loadTemplates(); } catch(e) { toast('Error: ' + e.message); }
+}
+
+function copyTemplate(id) {
+  const t = (window._templates||[]).find(x => x.id === id);
+  if (!t) return;
+  navigator.clipboard.writeText(`Subject: ${t.subject}\n\n${t.body}`).catch(()=>{});
+  toast('Template copied!');
+}
+
+function editTemplate(id) {
+  const t = (window._templates||[]).find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('modal-title').textContent = 'Edit template';
+  document.getElementById('modal-body').innerHTML = templateForm(t);
+  document.getElementById('modal-save').onclick = async () => {
+    try { await dbPatch('templates', id, getTemplateForm()); closeModal(); toast('Updated!'); loadTemplates(); }
+    catch(e) { toast('Error: ' + e.message); }
+  };
+  document.getElementById('modal-add').classList.add('open');
+}
+
+// ── GOTCHAS ──
+async function loadGotchas() {
+  const el = document.getElementById('gotchas-container');
+  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>Loading...</div>';
+  try {
+    const data = await dbGet('gotchas');
+    if (!data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-alert-triangle"></i><p>No team gotchas yet.</p></div>'; return; }
+    el.innerHTML = data.map(g => `
+      <div class="gotcha-card">
+        <button class="del-btn" onclick="deleteGotcha('${g.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+        <span class="gotcha-tag">${esc(g.tag||'')}</span>
+        <div class="gotcha-title">${esc(g.title)}</div>
+        <div class="gotcha-fix">${esc(g.fix||'')}</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i><p>Error: ${esc(e.message)}</p></div>`; }
+}
+
+async function deleteGotcha(id) {
+  if (!confirm('Delete this gotcha?')) return;
+  try { await dbDelete('gotchas', id); toast('Deleted'); loadGotchas(); } catch(e) { toast('Error: ' + e.message); }
+}
+
+// ── SNIPPETS ──
+async function loadSnippets() {
+  const el = document.getElementById('snippets-container');
+  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i>Loading...</div>';
+  try {
+    const data = await dbGet('snippets');
+    if (!data.length) { el.innerHTML = '<div class="empty"><i class="ti ti-code"></i><p>No team snippets yet.</p></div>'; return; }
+    el.innerHTML = data.map(s => `
+      <div class="snippet-card">
+        <div class="snippet-header">
+          <span class="snippet-label">${esc(s.label)}</span>
+          <button class="btn btn-sm btn-ghost" onclick="cp(this,${JSON.stringify(s.code||'')})"><i class="ti ti-copy"></i> Copy</button>
+          <button class="snippet-del" onclick="deleteSnippet('${s.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+        </div>
+        <div class="snippet-code">${esc(s.code||'')}</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="empty"><i class="ti ti-alert-circle"></i><p>Error: ${esc(e.message)}</p></div>`; }
+}
+
+async function deleteSnippet(id) {
+  if (!confirm('Delete this snippet?')) return;
+  try { await dbDelete('snippets', id); toast('Deleted'); loadSnippets(); } catch(e) { toast('Error: ' + e.message); }
+}
+
+
+// ── ADD MODAL ──
+function openAdd() {
+  document.getElementById('modal-save').onclick = saveEntry;
+  document.getElementById('modal-save').style.display = '';
+  if (currentPage === 'templates') { openAddTemplate(); return; }
+  if (currentPage === 'gotchas') { openAddGotcha(); return; }
+  if (currentPage === 'snippets') { openAddSnippet(); return; }
+  if (currentPage === 'folder') { openAddFolderContent(); return; }
+  openAddTemplate();
+}
+
+function templateForm(t = {}) {
+  return `
+    <div class="field"><label>Template name</label><input id="f-name" value="${esc(t.name||'')}" placeholder="e.g. Auth Error — Session Limit"/></div>
+    <div class="two-col">
+      <div class="field"><label>Category</label><select id="f-cat">
+        <option${t.category==='Onboarding'?' selected':''}>Onboarding</option>
+        <option${t.category==='Support'?' selected':''}>Support</option>
+        <option${t.category==='Follow-up'?' selected':''}>Follow-up</option>
+        <option${t.category==='Outreach'?' selected':''}>Outreach</option>
+        <option${t.category==='Internal'?' selected':''}>Internal</option>
+      </select></div>
+    </div>
+    <div class="field"><label>Subject line</label><input id="f-subject" value="${esc(t.subject||'')}" placeholder="Email subject"/></div>
+    <div class="field"><label>Body</label><textarea id="f-body" rows="7">${esc(t.body||'')}</textarea></div>`;
+}
+
+function getTemplateForm() {
+  return { name: document.getElementById('f-name').value, category: document.getElementById('f-cat').value, subject: document.getElementById('f-subject').value, body: document.getElementById('f-body').value };
+}
+
+function openAddTemplate() {
+  document.getElementById('modal-title').textContent = 'Add email template';
+  document.getElementById('modal-body').innerHTML = templateForm();
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function openAddGotcha() {
+  document.getElementById('modal-title').textContent = 'Log a gotcha';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Category</label><select id="f-tag"><option>Auth</option><option>Orders</option><option>Market Data</option><option>WebSocket</option><option>Accounts</option><option>Other</option></select></div>
+    <div class="field"><label>Issue</label><input id="f-title" placeholder="Short description"/></div>
+    <div class="field"><label>Fix / workaround</label><textarea id="f-fix" rows="4" placeholder="What solved it..."></textarea></div>`;
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function openAddSnippet() {
+  document.getElementById('modal-title').textContent = 'Add snippet';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Label</label><input id="f-label" placeholder="e.g. Renew token (Python)"/></div>
+    <div class="field"><label>Code</label><textarea id="f-code" rows="8" style="font-family:var(--font-mono);font-size:12px"></textarea></div>`;
+  document.getElementById('modal-add').classList.add('open');
+}
+
+async function saveEntry() {
+  try {
+    if (currentPage === 'templates' || currentPage === 'home') {
+      const d = getTemplateForm();
+      if (!d.name) { toast('Name required'); return; }
+      await dbInsert('templates', d); closeModal(); toast('Template saved!'); if (currentPage==='templates') loadTemplates();
+    } else if (currentPage === 'gotchas') {
+      const d = { tag: document.getElementById('f-tag').value, title: document.getElementById('f-title').value, fix: document.getElementById('f-fix').value };
+      if (!d.title) { toast('Title required'); return; }
+      await dbInsert('gotchas', d); closeModal(); toast('Gotcha logged!'); loadGotchas();
+    } else if (currentPage === 'snippets') {
+      const d = { label: document.getElementById('f-label').value, code: document.getElementById('f-code').value };
+      if (!d.label) { toast('Label required'); return; }
+      await dbInsert('snippets', d); closeModal(); toast('Snippet saved!'); loadSnippets();
+    }
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+function openShare() { document.getElementById('modal-share').classList.add('open'); }
+function closeModal(id) { const el = document.getElementById(id||'modal-add'); el.classList.remove('open'); document.getElementById('modal-save').onclick = saveEntry; }
+
+document.getElementById('modal-add').addEventListener('click', e => { if (e.target===document.getElementById('modal-add')) closeModal(); });
+document.getElementById('modal-share').addEventListener('click', e => { if (e.target===document.getElementById('modal-share')) closeModal('modal-share'); });
+
+function cp(btn, text) {
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const orig = btn.innerHTML; btn.innerHTML = '<i class="ti ti-check"></i> Copied';
+  setTimeout(() => btn.innerHTML = orig, 1500);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>
+
+
